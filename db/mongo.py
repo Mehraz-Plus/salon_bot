@@ -11,7 +11,7 @@ import settings
 
 class MongoManager:
     def __init__(self):
-        # self.client = MongoClient(MONGO_URI)
+        # self.client = MongoClient(settings.MONGO_URI)
         self.client = MongoClient()
         self.db = self.client[settings.DB_NAME]
         
