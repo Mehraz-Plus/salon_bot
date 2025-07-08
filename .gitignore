@@ -2,7 +2,7 @@ __pycache__/
 .vscode/
 .git/
 config/session.py
-
+config/settings.py
 
 *.session
 *.session_journal

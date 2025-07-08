@@ -1,14 +1,20 @@
-from telethon import TelegramClient, events
-from config import settings
-from db.mongo import mongo
+import sys
+import os
 
+# اضافه کردن مسیر فولدر config به sys.path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'config'))
+
+# حالا می‌توانید ماژول settings را ایمپورت کنید
+from config import settings
+from telethon import TelegramClient, events
+from db import mongo
 from bot.handlers import owner, stylist
 
 api_id = settings.API_ID
 api_hash = settings.API_HASH
 bot_token = settings.BOT_TOKEN
 
-bot = TelegramClient('barberbot', api_id, api_hash).start(bot_token=bot_token)
+bot = TelegramClient('kandipoor', api_id, api_hash).start(bot_token=bot_token)
 
 
 def is_owner(user_id):
@@ -19,6 +25,7 @@ def is_owner(user_id):
 async def main_handler(event):
     sender = await event.get_sender()
     sender_id = sender.id
+    print(sender_id)
     
 
     if is_owner(sender_id):

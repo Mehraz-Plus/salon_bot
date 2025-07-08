@@ -1,14 +1,14 @@
 from pymongo import MongoClient, ReturnDocument
 from bson import ObjectId
 from datetime import datetime, timezone
-# from config.settings import MONGO_URI, DB_NAME
-MONGO_URI = 0
-DB_NAME = 0
+from config.settings import MONGO_URI, DB_NAME
 
 class MongoManager:
     def __init__(self):
-        self.client = MongoClient(MONGO_URI)
+        # self.client = MongoClient(MONGO_URI)
+        self.client = MongoClient()
         self.db = self.client[DB_NAME]
+        
 
         self.users = self.db.users
         self.products = self.db.products
