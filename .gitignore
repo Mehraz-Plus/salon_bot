@@ -1,6 +1,7 @@
 __pycache__/
 .vscode/
 .git/
+.venv/
 config/session.py
 config/settings.py
 

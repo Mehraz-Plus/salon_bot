@@ -1,19 +1,26 @@
 from pymongo import MongoClient, ReturnDocument
+import sys
+import os
+
+# اضافه کردن مسیر فولدر config به sys.path
+config_path = os.path.join(os.path.dirname(__file__), '..', 'config')
+sys.path.append(config_path)
 from bson import ObjectId
 from datetime import datetime, timezone
-from config.settings import MONGO_URI, DB_NAME
+import settings
 
 class MongoManager:
     def __init__(self):
         # self.client = MongoClient(MONGO_URI)
         self.client = MongoClient()
-        self.db = self.client[DB_NAME]
+        self.db = self.client[settings.DB_NAME]
         
 
         self.users = self.db.users
         self.products = self.db.products
         self.invoices = self.db.invoices
         self.withdrawals = self.db.withdrawals
+
 
     #  کاربران
     def add_user(self, name, mobile, role="stylist"):

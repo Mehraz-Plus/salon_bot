@@ -2,13 +2,18 @@ import sys
 import os
 
 # اضافه کردن مسیر فولدر config به sys.path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'config'))
+config_path = os.path.join(os.path.dirname(__file__), '..', 'config')
+sys.path.append(config_path)
+path = os.path.join(os.path.dirname(__file__), '..', 'db')
+sys.path.append(path)
+handlers_path = os.path.join(os.path.dirname(__file__), 'handlers')
+sys.path.append(handlers_path)
 
 # حالا می‌توانید ماژول settings را ایمپورت کنید
-from config import settings
+import settings
 from telethon import TelegramClient, events
-from db import mongo
-from bot.handlers import owner, stylist
+import mongo
+import owner, stylist
 
 api_id = settings.API_ID
 api_hash = settings.API_HASH
@@ -25,7 +30,7 @@ def is_owner(user_id):
 async def main_handler(event):
     sender = await event.get_sender()
     sender_id = sender.id
-    print(sender_id)
+    
     
 
     if is_owner(sender_id):
