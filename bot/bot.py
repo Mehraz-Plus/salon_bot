@@ -11,7 +11,7 @@ sys.path.append(handlers_path)
 
 # حالا می‌توانید ماژول settings را ایمپورت کنید
 import settings
-from telethon import TelegramClient, events
+from telethon import TelegramClient, events, Button
 import mongo
 import owner, stylist
 
@@ -34,17 +34,40 @@ async def main_handler(event):
     
 
     if is_owner(sender_id):
-        await event.reply("سلام مدیر ! آماده‌ی مدیریت سالن هستید.")
+        buttons = [
+                [Button.inline(" آرایشگر جدید", b"add_stylist")],
+                [Button.inline(" محصول جدید", b"add_product")],
+                [Button.inline(" گزارش سود", b"report_profit")],
+                [Button.inline(" موجودی محصولات", b"list_products")],
+                [Button.inline(" آرایشگرها", b"list_stylists")],
+            ]
+        await event.reply("سلام مدیر ! لطفاً یکی از گزینه‌ها را انتخاب کنید:", buttons=buttons)
+        
+        
         
     else:
         user = mongo.get_user_by_telegram(sender_id)
         if user:
-            await event.reply(f"سلام {user['name']}! خوش اومدی. آماده‌ای برای ثبت کارهات؟")
+            buttons = [
+                    [Button.inline(" ثبت مصرف مواد", b"use_product")],
+                    [Button.inline(" گزارش کارکرد", b"stylist_report")],
+                    [Button.inline(" موجودی محصولات", b"list_products")],
+                ]
+            await event.reply(f"سلام {user['name']} !خوش اومدی")
         else:
             await event.reply("شما در سیستم ثبت نشده‌اید. لطفاً با مدیر تماس بگیرید.")
     return
 
 
+@bot.on(events.CallbackQuery)
+async def callback_handler(event):
+    sender_id = event.sender_id
+    data = event.data.decode()
+
+    if is_owner(sender_id):
+        await owner.handle_callback(event, data, bot)
+    else:
+        await stylist.handle_callback(event, data, bot)
 
 if __name__ == "__main__":
     
