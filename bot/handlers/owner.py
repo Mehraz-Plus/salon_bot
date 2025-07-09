@@ -20,18 +20,25 @@ async def handle_callback(event, data, bot):
         await list_products(event)
     elif data == "list_stylists":
         await list_stylists(event)
+    
+    elif data == "delete_stylists":
+        await delete_stylists(event, bot)
+    
     await event.answer()
 
 
 async def add_stylist(event, bot):
     async with bot.conversation(event.sender_id) as conv:
+        await conv.send_message(" آیدی تلگرام آرایشگر را بدون @ وارد کنید: ")
+        telegram_id = (await conv.get_response()).text.strip()
+
         await conv.send_message(" نام آرایشگر را وارد کنید:")
         name = (await conv.get_response()).text.strip()
 
         await conv.send_message(" شماره موبایل آرایشگر را وارد کنید:")
         mobile = (await conv.get_response()).text.strip()
 
-        mongo.mongo_manager.add_user(name, mobile)
+        mongo.mongo_manager.add_user(telegram_id, name, mobile)
         await conv.send_message(f"✅ آرایشگر {name} با شماره {mobile} اضافه شد.")
 
  
@@ -89,3 +96,11 @@ async def list_stylists(event):
         balance = u.get("balance", 0)
         text += f"- {u['name']} |  {u['mobile']} |  موجودی: {balance}\n"
     await event.respond(text)
+
+
+async def delete_stylists(event, bot):
+    async with bot.conversation(event.sender_id) as conv:
+        await conv.send_message(" نام آرایشگر را وارد کنید:")
+        name = (await conv.get_response()).text.strip()
+        mongo.mongo_manager.delete_stylist(name)
+        await event.reply(f"آرایشگر {name} حذف شد")

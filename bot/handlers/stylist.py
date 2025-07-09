@@ -23,33 +23,35 @@ async def use_product(event, bot):
     async with bot.conversation(event.sender_id) as conv:
         await conv.send_message(" نام محصولی که استفاده کردی:")
         product_name = (await conv.get_response()).text.strip()
+        product = mongo.mongo_manager.get_product(product_name)
+        if not product:
+            await conv.send_message(" محصول پیدا نشد.")
+            return
 
         await conv.send_message(" چند گرم استفاده کردی؟")
         amount = float((await conv.get_response()).text.strip())
 
         await conv.send_message(" نام مشتری:")
         customer_name = (await conv.get_response()).text.strip()
+        
 
-        # پیدا کردن محصول
-        product = mongo.mongo_manager.products.find_one({"name": product_name})
-        if not product:
-            await conv.send_message(" محصول پیدا نشد.")
-            return
+        # update in db
 
         # محاسبه
         unit_price = product["price_per_gram"]
         total_price = round(unit_price * amount, 2)
 
         items = [{
-            "product_id": product["_id"],
+            "product_id": product["name"],
             "amount": amount,
             "unit_price": unit_price,
             "total_price": total_price
         }]
-
+        sender = await event.get_sender()
+        sender_id = sender.id
         # ثبت در دیتابیس
         invoice = mongo.mongo_manager.create_invoice(
-            stylist_id=mongo.mongo_manager.get_user_by_telegram(event.sender_id)["_id"],
+            stylist_id=mongo.mongo_manager.get_user_by_telegram2(sender_id)["name"],
             customer_name=customer_name,
             items=items
         )
@@ -62,7 +64,7 @@ async def stylist_report(event, bot):
     to_date = datetime.now(timezone.utc)
 
     stylist = mongo.mongo_manager.get_user_by_telegram(event.sender_id)
-    report = mongo.mongo_manager.get_stylist_report(stylist["_id"], from_date, to_date)
+    report = mongo.mongo_manager.get_stylist_report(stylist["name"], from_date, to_date)
     if not report:
         await event.respond(" گزارشی برای شما یافت نشد.")
         return

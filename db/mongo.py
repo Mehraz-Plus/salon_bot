@@ -22,8 +22,9 @@ class MongoManager:
 
 
     #  کاربران
-    def add_user(self, name, mobile, role="stylist"):
+    def add_user(self,id ,name, mobile, role="stylist"):
         user = {
+            "id" : id,
             "name": name,
             "mobile": mobile,
             "role": role,
@@ -34,13 +35,15 @@ class MongoManager:
 
     def update_user_telegram_id(self, user_id, telegram_id):
         return self.users.find_one_and_update(
-            {"_id": ObjectId(user_id)},
+            {"id": user_id},
             {"$set": {"telegram_id": telegram_id}},
             return_document=ReturnDocument.AFTER,
         )
 
     def get_user_by_telegram(self, telegram_id):
         return self.users.find_one({"telegram_id": telegram_id})
+    def get_user_by_telegram2(self, telegram_id):
+        return self.users.find_one({"id": telegram_id})
 
     def get_user_by_mobile(self, mobile):
         return self.users.find_one({"mobile": mobile})
@@ -58,13 +61,13 @@ class MongoManager:
 
     def update_product_stock(self, product_id, amount_used):
         return self.products.find_one_and_update(
-            {"_id": ObjectId(product_id)},
+            {"id": product_id},
             {"$inc": {"total_weight": -amount_used}},
             return_document=ReturnDocument.AFTER,
         )
 
     def get_product(self, product_id):
-        return self.products.find_one({"_id": ObjectId(product_id)})
+        return self.products.find_one({"name": product_id})
 
     def list_products(self):
         return list(self.products.find())
@@ -83,7 +86,7 @@ class MongoManager:
         owner_profit = round(total * 0.6, 2)
 
         invoice = {
-            "stylist_id": ObjectId(stylist_id),
+            "id": stylist_id,
             "customer_name": customer_name,
             "date": datetime.now(timezone.utc),
             "items": items,
@@ -198,6 +201,18 @@ class MongoManager:
             "stylist_profit": 0
         }
 
+    def delete_stylist(self, name):
+        """
+        حذف یک آرایشگر بر اساس نام
+        """
+        result = self.users.delete_many({
+            "name": name,
+            "role": "stylist"
+        })
+        if result.deleted_count > 0:
+            print(f"{result.deleted_count} آرایشگر با نام {name} حذف شد.")
+        
+        
 
 
 mongo_manager = MongoManager()
