@@ -31,10 +31,10 @@ async def add_stylist(event, bot):
         await conv.send_message(" شماره موبایل آرایشگر را وارد کنید:")
         mobile = (await conv.get_response()).text.strip()
 
-        mongo.MongoManager.add_user(name, mobile)
+        mongo.mongo_manager.add_user(name, mobile)
         await conv.send_message(f"✅ آرایشگر {name} با شماره {mobile} اضافه شد.")
 
-
+ 
 async def add_product(event, bot):
     async with bot.conversation(event.sender_id) as conv:
         await conv.send_message(" نام محصول را وارد کنید:")
@@ -49,15 +49,15 @@ async def add_product(event, bot):
         await conv.send_message(" قیمت هر واحد را وارد کنید:")
         price = float((await conv.get_response()).text.strip())
 
-        mongo.MongoManager.add_product(name, unit, weight, price)
+        mongo.mongo_manager.add_product(name, unit, weight, price)
         await conv.send_message(f"✅ محصول {name} ثبت شد.")
 
-
+###
 async def report_profit(event):
     from_date = datetime(1970, 1, 1)
     to_date = datetime.now(timezone.utc)
 
-    report = mongo.MongoManager.get_profit_report(from_date, to_date)
+    report = mongo.mongo_manager.get_profit_report(from_date, to_date)
     if not report:
         await event.respond(" هیچ درآمدی ثبت نشده.")
         return
@@ -69,9 +69,9 @@ async def report_profit(event):
         f"سهم آرایشگرها: {report['total_stylist']}"
     )
 
-
+# 
 async def list_products(event):
-    products = mongo.MongoManager.list_products()
+    products = mongo.mongo_manager.list_products()
     if not products:
         await event.respond(" محصولی ثبت نشده.")
         return
@@ -81,9 +81,9 @@ async def list_products(event):
         text += f"- {p['name']} | موجودی: {p['total_weight']} {p['unit']} | قیمت: {p['price_per_gram']} / واحد\n"
     await event.respond(text)
 
-
+# 
 async def list_stylists(event):
-    users = mongo.MongoManager.users.find({"role": "stylist"})
+    users = mongo.mongo_manager.users.find({"role": "stylist"})
     text = " آرایشگرها:\n"
     for u in users:
         balance = u.get("balance", 0)

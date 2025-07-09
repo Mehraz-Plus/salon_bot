@@ -18,7 +18,7 @@ async def handle_callback(event, data, bot):
         await list_products(event)
     await event.answer()
 
-
+# 
 async def use_product(event, bot):
     async with bot.conversation(event.sender_id) as conv:
         await conv.send_message(" نام محصولی که استفاده کردی:")
@@ -31,7 +31,7 @@ async def use_product(event, bot):
         customer_name = (await conv.get_response()).text.strip()
 
         # پیدا کردن محصول
-        product = mongo.MongoManager.products.find_one({"name": product_name})
+        product = mongo.mongo_manager.products.find_one({"name": product_name})
         if not product:
             await conv.send_message(" محصول پیدا نشد.")
             return
@@ -48,21 +48,21 @@ async def use_product(event, bot):
         }]
 
         # ثبت در دیتابیس
-        invoice = mongo.MongoManager.create_invoice(
-            stylist_id=mongo.MongoManager.get_user_by_telegram(event.sender_id)["_id"],
+        invoice = mongo.mongo_manager.create_invoice(
+            stylist_id=mongo.mongo_manager.get_user_by_telegram(event.sender_id)["_id"],
             customer_name=customer_name,
             items=items
         )
 
         await conv.send_message(f"✅ ثبت شد. کل مبلغ: {invoice['total']}")
 
-
+# 
 async def stylist_report(event, bot):
     from_date = datetime(1970, 1, 1)
     to_date = datetime.now(timezone.utc)
 
-    stylist = mongo.MongoManager.get_user_by_telegram(event.sender_id)
-    report = mongo.MongoManager.get_stylist_report(stylist["_id"], from_date, to_date)
+    stylist = mongo.mongo_manager.get_user_by_telegram(event.sender_id)
+    report = mongo.mongo_manager.get_stylist_report(stylist["_id"], from_date, to_date)
     if not report:
         await event.respond(" گزارشی برای شما یافت نشد.")
         return
@@ -72,10 +72,10 @@ async def stylist_report(event, bot):
         f"کل درآمد: {report['total']}\n"
         f"سهم شما: {report['stylist_profit']}"
     )
-
+# 
 
 async def list_products(event):
-    products = mongo.MongoManager.list_products()
+    products = mongo.mongo_manager.list_products()
     if not products:
         await event.respond(" محصولی ثبت نشده.")
         return

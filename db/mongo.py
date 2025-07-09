@@ -133,6 +133,71 @@ class MongoManager:
         )
 
         return withdrawal
+# ##
+    def get_profit_report(self, from_date, to_date):
+        """
+        گزارش سود کلی سالن بین دو تاریخ
+        """
+        pipeline = [
+            {
+                "$match": {
+                    "date": {
+                        "$gte": from_date,
+                        "$lte": to_date
+                    }
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "total": {"$sum": "$total"},
+                    "total_owner": {"$sum": "$profit_split.owner"},
+                    "total_stylist": {"$sum": "$profit_split.stylist"}
+                }
+            }
+        ]
+
+        result = list(self.invoices.aggregate(pipeline))
+        if result:
+            return result[0]
+        return {
+            "total": 0,
+            "total_owner": 0,
+            "total_stylist": 0
+        }
     
-    def get_profit_report(from_date, to_date):
-        ...
+
+    def get_stylist_report(self, stylist_id, from_date, to_date):
+        """
+        گزارش درآمد آرایشگر بین دو تاریخ
+        """
+        pipeline = [
+            {
+                "$match": {
+                    "stylist_id": ObjectId(stylist_id),
+                    "date": {
+                        "$gte": from_date,
+                        "$lte": to_date
+                    }
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$stylist_id",
+                    "total": {"$sum": "$total"},
+                    "stylist_profit": {"$sum": "$profit_split.stylist"}
+                }
+            }
+        ]
+
+        result = list(self.invoices.aggregate(pipeline))
+        if result:
+            return result[0]
+        return {
+            "total": 0,
+            "stylist_profit": 0
+        }
+
+
+
+mongo_manager = MongoManager()
