@@ -275,6 +275,20 @@ class MongoManager:
             {"$set": {"total_weight": new_stock}}
         )
         return f"✅ {amount} به موجودی «{product['name']}» اضافه شد. موجودی جدید: {new_stock}"
+    def update_product_price(self, product_id, new_price):
+        """
+        تغییر قیمت هر واحد محصول (توسط مدیر).
+        """
+        product = self.get_product(product_id)
+        if not product:
+            return " !محصول پیدا نشد."
+
+        self.products.update_one(
+            {"name": product["name"]},
+            {"$set": {"price_per_gram": new_price}}
+        )
+
+        return f"✅ قیمت محصول «{product['name']}» به {new_price} به‌روزرسانی شد."
 
         
 

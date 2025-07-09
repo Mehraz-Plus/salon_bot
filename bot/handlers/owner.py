@@ -25,6 +25,8 @@ async def handle_callback(event, data, bot):
         await delete_stylists(event, bot)
     elif data == "delete_product":
         await delete_products(event, bot)
+    elif data == "update_product_price":
+        await update_product_price(event, bot)
     
     await event.answer()
 
@@ -156,3 +158,14 @@ async def delete_products(event, bot):
         name = (await conv.get_response()).text.strip()
         mongo.mongo_manager.delete_product(name)
         await event.reply(f"محصول {name} حذف شد")
+
+        
+async def update_product_price(event, bot):
+    async with bot.conversation(event.sender_id) as conv:
+        await conv.send_message(" نام محصول را وارد کنید: ")
+        name = (await conv.get_response()).text.strip()
+        await conv.send_message("قیمت جدید هر واحد محصول را وارد کنید: ")
+        price = (await conv.get_response()).text.strip()
+        now = mongo.mongo_manager.update_product_price(name, price)
+        await conv.send_message(now)
+
