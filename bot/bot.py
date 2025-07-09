@@ -46,7 +46,7 @@ async def main_handler(event):
         
         
     else:
-        user = mongo.get_user_by_telegram(sender_id)
+        user = mongo.MongoManager.get_user_by_telegram(sender_id)
         if user:
             buttons = [
                     [Button.inline(" ثبت مصرف مواد", b"use_product")],
@@ -72,3 +72,4 @@ async def callback_handler(event):
 if __name__ == "__main__":
     
     bot.run_until_disconnected()
+    mongo.MongoManager()

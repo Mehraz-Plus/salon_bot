@@ -11,8 +11,7 @@ import settings
 
 class MongoManager:
     def __init__(self):
-        # self.client = MongoClient(settings.MONGO_URI)
-        self.client = MongoClient()
+        self.client = MongoClient(settings.MONGO_URI)
         self.db = self.client[settings.DB_NAME]
         
 
@@ -134,3 +133,6 @@ class MongoManager:
         )
 
         return withdrawal
+    
+    def get_profit_report(from_date, to_date):
+        ...
