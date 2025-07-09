@@ -110,7 +110,7 @@ class MongoManager:
         )
 
         return invoice
-
+# 
     # 📋 تسویه
     def withdraw(self, stylist_id, note=""):
         user = self.users.find_one({"_id": ObjectId(stylist_id)})
@@ -152,7 +152,7 @@ class MongoManager:
             },
             {
                 "$group": {
-                    "_id": None,
+                    "name": None,
                     "total": {"$sum": "$total"},
                     "total_owner": {"$sum": "$profit_split.owner"},
                     "total_stylist": {"$sum": "$profit_split.stylist"}
@@ -177,7 +177,7 @@ class MongoManager:
         pipeline = [
             {
                 "$match": {
-                    "stylist_id": ObjectId(stylist_id),
+                    "stylist_id": stylist_id,
                     "date": {
                         "$gte": from_date,
                         "$lte": to_date
@@ -186,7 +186,7 @@ class MongoManager:
             },
             {
                 "$group": {
-                    "_id": "$stylist_id",
+                    "name": "$stylist_id",
                     "total": {"$sum": "$total"},
                     "stylist_profit": {"$sum": "$profit_split.stylist"}
                 }

@@ -3,7 +3,7 @@ import os
 
 path = os.path.join(os.path.dirname(__file__), '..', 'db')
 sys.path.append(path)
-
+import jdatetime
 import mongo
 from telethon import events, Button
 from datetime import datetime, timezone
@@ -15,7 +15,7 @@ async def handle_callback(event, data, bot):
     elif data == "add_product":
         await add_product(event, bot)
     elif data == "report_profit":
-        await report_profit(event)
+        await report_profit(event, bot)
     elif data == "list_products":
         await list_products(event)
     elif data == "list_stylists":
@@ -76,9 +76,37 @@ async def add_product(event, bot):
         await conv.send_message(f"✅ محصول {name} ثبت شد.")
 
 ###
-async def report_profit(event):
-    from_date = datetime(1970, 1, 1)
-    to_date = datetime.now(timezone.utc)
+async def report_profit(event, bot):
+    async with bot.conversation(event.sender_id) as conv:
+        await conv.send_message(" تاریخ اولیه را وارد کنید. مثال 1402/01/01 ")
+        from_date_str = (await conv.get_response()).text.strip()
+
+        await conv.send_message(" تاریخ ثانویه را وارد کنید. مثال 1402/01/01 ")
+        to_date_str = (await conv.get_response()).text.strip()
+        from_date_jalali = jdatetime.datetime.strptime(from_date_str, "%Y/%m/%d")
+        to_date_jalali = jdatetime.datetime.strptime(to_date_str, "%Y/%m/%d")
+        
+        from_date = from_date_jalali.togregorian()
+        to_date = to_date_jalali.togregorian()
+        
+        # اطمینان از اینکه تاریخ‌ها در منطقه زمانی UTC هستند
+        from_date = from_date.replace(tzinfo=timezone.utc)
+        to_date = to_date.replace(tzinfo=timezone.utc)
+        
+        report = mongo.mongo_manager.get_profit_report(from_date, to_date)
+        if not report:
+            await event.respond("هیچ درآمدی ثبت نشده.")
+            return
+        
+        await event.respond(
+            f"گزارش سود از {from_date_str} تا {to_date_str}:\n"
+            f"کل: {report['total']}\n"
+            f"سهم سالن: {report['total_owner']}\n"
+            f"سهم آرایشگرها: {report['total_stylist']}"
+        )
+            
+        
+   
 
     report = mongo.mongo_manager.get_profit_report(from_date, to_date)
     if not report:
