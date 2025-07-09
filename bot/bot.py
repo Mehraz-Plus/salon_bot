@@ -45,6 +45,7 @@ async def main_handler(event):
                 [Button.inline(" موجودی محصولات", b"list_products")],
                 [Button.inline(" آرایشگرها", b"list_stylists")],
                 [Button.inline("حذف آرایشگر", b"delete_stylists")],
+                [Button.inline("حذف محصول", b"delete_product")],
             ]
         await event.reply("سلام مدیر ! لطفاً یکی از گزینه‌ها را انتخاب کنید:", buttons=buttons)
         

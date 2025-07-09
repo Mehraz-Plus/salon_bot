@@ -23,6 +23,8 @@ async def handle_callback(event, data, bot):
     
     elif data == "delete_stylists":
         await delete_stylists(event, bot)
+    elif data == "delete_product":
+        await delete_products(event, bot)
     
     await event.answer()
 
@@ -46,6 +48,20 @@ async def add_product(event, bot):
     async with bot.conversation(event.sender_id) as conv:
         await conv.send_message(" نام محصول را وارد کنید:")
         name = (await conv.get_response()).text.strip()
+        product = mongo.mongo_manager.get_product(name)
+        if product:
+            buttons = [
+                [Button.inline(" اضافه کردن موجودی محصول", b"increase")],
+                ]
+            await conv.send_message(" محصول تکراری است.", buttons=buttons)
+            response = await conv.get_response()
+            if response.data == b"increase":
+                await conv.send_message(" مقدار محصول را وارد کنید:")
+                weight = float((await conv.get_response()).text.strip())
+                now = mongo.mongo_manager.increase_product_stock(name, weight)
+                await conv.send_message(now)
+
+                
 
         await conv.send_message(" واحد محصول (مثل گرم) را وارد کنید:")
         unit = (await conv.get_response()).text.strip()
@@ -104,3 +120,11 @@ async def delete_stylists(event, bot):
         name = (await conv.get_response()).text.strip()
         mongo.mongo_manager.delete_stylist(name)
         await event.reply(f"آرایشگر {name} حذف شد")
+
+
+async def delete_products(event, bot):
+    async with bot.conversation(event.sender_id) as conv:
+        await conv.send_message(" نام محصول را وارد کنید: ")
+        name = (await conv.get_response()).text.strip()
+        mongo.mongo_manager.delete_product(name)
+        await event.reply(f"محصول {name} حذف شد")

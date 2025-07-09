@@ -213,6 +213,70 @@ class MongoManager:
             print(f"{result.deleted_count} آرایشگر با نام {name} حذف شد.")
         
         
+    def delete_product(self, name):
+            """
+            حذف محصول(ها) بر اساس نام.
+            اگر چند محصول با این نام باشند، همه حذف می‌شوند.
+            """
+            products = list(self.products.find({"name": name}))
+            
+            if not products:
+                return {
+                    "success": False,
+                    "message": f" محصولی با نام «{name}» پیدا نشد.",
+                    "count": 0
+                }
+
+            result = self.products.delete_many({"name": name})
+            return {
+                "success": True,
+                "message": f"✅ محصول با نام «{name}» حذف شد.",
+                "count": result.deleted_count
+            }
+    
+
+    def reduce_product_stock(self, product_id, amount):
+        """
+        کم کردن موجودی محصول (مصرف توسط آرایشگر).
+        اگر موجودی کافی نباشد، مقدار جدید ۰ می‌شود و پیام می‌دهد که تمام شده.
+        """
+        product = self.get_product(product_id)
+
+        current_stock = product["total_weight"]
+        new_stock = round(current_stock - amount, 2)
+
+        if new_stock <= 0:
+            # موجودی تموم شد
+            self.products.update_one(
+                {"name": product["name"]},
+                {"$set": {"total_weight": 0}}
+                )
+            return(f"⚠️ محصول «{product['name']}» تمام شد!")
+            
+        # موجودی هنوز مثبت است
+        self.products.update_one(
+            {"name": product["name"]},
+            {"$set": {"total_weight": new_stock}}
+        )
+        return f"✅ {amount} از «{product['name']}» کم شد. موجودی جدید: {new_stock}"
+    
+
+    def increase_product_stock(self, product_id, amount):
+        """
+        اضافه کردن موجودی محصول (خرید توسط مدیر).
+        """
+        product = self.get_product(product_id)
+        
+
+        new_stock = round(product["total_weight"] + amount, 2)
+
+        self.products.update_one(
+            {"name": product["name"]},
+            {"$set": {"total_weight": new_stock}}
+        )
+        return f"✅ {amount} به موجودی «{product['name']}» اضافه شد. موجودی جدید: {new_stock}"
+
+        
 
 
 mongo_manager = MongoManager()

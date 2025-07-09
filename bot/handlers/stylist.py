@@ -5,7 +5,7 @@ path = os.path.join(os.path.dirname(__file__), '..', 'db')
 sys.path.append(path)
 
 import mongo
-from telethon import events
+from telethon import events, Button
 from datetime import datetime, timezone
 
 
@@ -20,36 +20,55 @@ async def handle_callback(event, data, bot):
 
 # 
 async def use_product(event, bot):
+    product_lst = []
+    total_price = 0
+    unit_price_count = 0
     async with bot.conversation(event.sender_id) as conv:
-        await conv.send_message(" نام محصولی که استفاده کردی:")
-        product_name = (await conv.get_response()).text.strip()
-        product = mongo.mongo_manager.get_product(product_name)
-        if not product:
-            await conv.send_message(" محصول پیدا نشد.")
-            return
+        while True:
+            buttons = [
+                [Button.inline("اتمام آرایش", b"end")],
+                ]
+            await conv.send_message(" نام محصولی که استفاده کردی:", buttons=buttons)
+            response = await conv.get_response()
+            if response.data == b"end":
+                break
 
-        await conv.send_message(" چند گرم استفاده کردی؟")
-        amount = float((await conv.get_response()).text.strip())
 
-        await conv.send_message(" نام مشتری:")
-        customer_name = (await conv.get_response()).text.strip()
-        
+            product_name = (await conv.get_response()).text.strip()
+            product = mongo.mongo_manager.get_product(product_name)
+            if not product:
+                await conv.send_message(" محصول پیدا نشد.")
+                return
 
-        # update in db
+            await conv.send_message(" چند گرم استفاده کردی؟")
+            amount = float((await conv.get_response()).text.strip())
+
+            await conv.send_message(" نام مشتری:")
+            customer_name = (await conv.get_response()).text.strip()
+            
+
+            # update in db
+            return_method = mongo.mongo_manager.reduce_product_stock(product_name, amount)
+            await event.reply(return_method)
+            
 
         # محاسبه
-        unit_price = product["price_per_gram"]
-        total_price = round(unit_price * amount, 2)
+            unit_price = product["price_per_gram"]
+            unit_price_count += unit_price
+            total_price += round(unit_price * amount, 2)
+            product_lst.append(product["name"])
+
+
 
         items = [{
-            "product_id": product["name"],
+            "product_name": product_lst,
             "amount": amount,
             "unit_price": unit_price,
             "total_price": total_price
         }]
         sender = await event.get_sender()
         sender_id = sender.id
-        # ثبت در دیتابیس
+            # ثبت در دیتابیس
         invoice = mongo.mongo_manager.create_invoice(
             stylist_id=mongo.mongo_manager.get_user_by_telegram2(sender_id)["name"],
             customer_name=customer_name,
