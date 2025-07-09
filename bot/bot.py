@@ -53,7 +53,7 @@ async def main_handler(event):
                     [Button.inline(" گزارش کارکرد", b"stylist_report")],
                     [Button.inline(" موجودی محصولات", b"list_products")],
                 ]
-            await event.reply(f"سلام {user['name']} !خوش اومدی")
+            await event.reply(f"سلام {user['name']} !خوش اومدی", buttons=buttons)
         else:
             await event.reply("شما در سیستم ثبت نشده‌اید. لطفاً با مدیر تماس بگیرید.")
     return

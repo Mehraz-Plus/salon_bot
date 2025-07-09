@@ -31,7 +31,7 @@ async def add_stylist(event, bot):
         await conv.send_message(" شماره موبایل آرایشگر را وارد کنید:")
         mobile = (await conv.get_response()).text.strip()
 
-        mongo.add_user(name, mobile)
+        mongo.MongoManager.add_user(name, mobile)
         await conv.send_message(f"✅ آرایشگر {name} با شماره {mobile} اضافه شد.")
 
 
@@ -49,7 +49,7 @@ async def add_product(event, bot):
         await conv.send_message(" قیمت هر واحد را وارد کنید:")
         price = float((await conv.get_response()).text.strip())
 
-        mongo.add_product(name, unit, weight, price)
+        mongo.MongoManager.add_product(name, unit, weight, price)
         await conv.send_message(f"✅ محصول {name} ثبت شد.")
 
 
@@ -57,7 +57,7 @@ async def report_profit(event):
     from_date = datetime(1970, 1, 1)
     to_date = datetime.now(timezone.utc)
 
-    report = mongo.get_profit_report(from_date, to_date)
+    report = mongo.MongoManager.get_profit_report(from_date, to_date)
     if not report:
         await event.respond(" هیچ درآمدی ثبت نشده.")
         return
@@ -71,7 +71,7 @@ async def report_profit(event):
 
 
 async def list_products(event):
-    products = mongo.list_products()
+    products = mongo.MongoManager.list_products()
     if not products:
         await event.respond(" محصولی ثبت نشده.")
         return
@@ -83,7 +83,7 @@ async def list_products(event):
 
 
 async def list_stylists(event):
-    users = mongo.users.find({"role": "stylist"})
+    users = mongo.MongoManager.users.find({"role": "stylist"})
     text = " آرایشگرها:\n"
     for u in users:
         balance = u.get("balance", 0)

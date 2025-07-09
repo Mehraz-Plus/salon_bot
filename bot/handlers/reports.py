@@ -5,9 +5,8 @@ path = os.path.join(os.path.dirname(__file__), '..', 'db')
 sys.path.append(path)
 
 import mongo
-
-
 from datetime import datetime, timezone
+
 
 async def report_profit(event, from_date=None, to_date=None):
     """
@@ -16,7 +15,7 @@ async def report_profit(event, from_date=None, to_date=None):
     from_date = from_date or datetime(1970, 1, 1)
     to_date = to_date or datetime.now(timezone.utc)
 
-    report = mongo.get_profit_report(from_date, to_date)
+    report = mongo.MongoManager.get_profit_report(from_date, to_date)
     if not report:
         await event.respond(" هیچ درآمدی در این بازه ثبت نشده.")
         return
@@ -36,7 +35,7 @@ async def stylist_report(event, stylist_id, from_date=None, to_date=None):
     from_date = from_date or datetime(1970, 1, 1)
     to_date = to_date or datetime.now(timezone.utc)
 
-    report = mongo.get_stylist_report(stylist_id, from_date, to_date)
+    report = mongo.MongoManager.get_stylist_report(stylist_id, from_date, to_date)
     if not report:
         await event.respond(" گزارشی برای شما یافت نشد.")
         return
