@@ -73,7 +73,7 @@ class MongoManager:
         return list(self.products.find())
 
     # 📋 فاکتور
-    def create_invoice(self, stylist_id, customer_name, items):
+    def create_invoice(self, stylist_id, customer_name, customer_price, items):
         """
         items: list of dicts
         [
@@ -82,12 +82,13 @@ class MongoManager:
         ]
         """
         total = sum(item["total_price"] for item in items)
-        stylist_profit = round(total * 0.4, 2)
-        owner_profit = round(total * 0.6, 2)
+        stylist_profit = total * 0.4, 2
+        owner_profit = total * 0.6, 2
 
         invoice = {
             "id": stylist_id,
             "customer_name": customer_name,
+            "customer_price" : customer_price,
             "date": datetime.now(timezone.utc),
             "items": items,
             "total": total,

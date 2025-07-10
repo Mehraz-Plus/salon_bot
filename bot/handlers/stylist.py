@@ -43,8 +43,6 @@ async def use_product(event, bot):
             await conv.send_message(" چند گرم استفاده کردی؟")
             amount = float((await conv.get_response()).text.strip())
 
-            await conv.send_message(" نام مشتری:")
-            customer_name = (await conv.get_response()).text.strip()
             
 
             # update in db
@@ -58,11 +56,15 @@ async def use_product(event, bot):
             total_price += round(unit_price * amount, 2)
             product_lst.append(product["name"])
 
+        await conv.send_message(" نام مشتری:")
+        customer_name = (await conv.get_response()).text.strip()
 
+        await conv.send_message("پرداخت نهایی مشتری: ")
+        customer_price = float((await conv.get_response()).text.strip())
 
+        total_price = customer_price - total_price
         items = [{
             "product_name": product_lst,
-            "amount": amount,
             "unit_price": unit_price,
             "total_price": total_price
         }]
@@ -72,6 +74,7 @@ async def use_product(event, bot):
         invoice = mongo.mongo_manager.create_invoice(
             stylist_id=mongo.mongo_manager.get_user_by_telegram2(sender_id)["name"],
             customer_name=customer_name,
+            customer_price=customer_price,
             items=items
         )
 
