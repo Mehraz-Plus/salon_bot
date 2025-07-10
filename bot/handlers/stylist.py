@@ -3,7 +3,7 @@ import os
 
 path = os.path.join(os.path.dirname(__file__), '..', 'db')
 sys.path.append(path)
-
+import jdatetime
 import mongo
 from telethon import events, Button
 from datetime import datetime, timezone
@@ -79,8 +79,21 @@ async def use_product(event, bot):
 
 # 
 async def stylist_report(event, bot):
-    from_date = datetime(1970, 1, 1)
-    to_date = datetime.now(timezone.utc)
+    async with bot.conversation(event.sender_id) as conv:
+        await conv.send_message(" تاریخ اولیه را وارد کنید. مثال 1402/01/01 ")
+        from_date_str = (await conv.get_response()).text.strip()
+
+        await conv.send_message(" تاریخ ثانویه را وارد کنید. مثال 1402/01/01 ")
+        to_date_str = (await conv.get_response()).text.strip()
+        from_date_jalali = jdatetime.datetime.strptime(from_date_str, "%Y/%m/%d")
+        to_date_jalali = jdatetime.datetime.strptime(to_date_str, "%Y/%m/%d")
+        
+        from_date = from_date_jalali.togregorian()
+        to_date = to_date_jalali.togregorian()
+        
+        # اطمینان از اینکه تاریخ‌ها در منطقه زمانی UTC هستند
+        from_date = from_date.replace(tzinfo=timezone.utc)
+        to_date = to_date.replace(tzinfo=timezone.utc)
 
     stylist = mongo.mongo_manager.get_user_by_telegram(event.sender_id)
     report = mongo.mongo_manager.get_stylist_report(stylist["name"], from_date, to_date)
