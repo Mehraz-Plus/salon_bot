@@ -153,14 +153,13 @@ class MongoManager:
             },
             {
                 "$group": {
-                    "name": None,
+                    "_id": None,  # گروه‌بندی کلی (یک سطر نتیجه)
                     "total": {"$sum": "$total"},
                     "total_owner": {"$sum": "$profit_split.owner"},
                     "total_stylist": {"$sum": "$profit_split.stylist"}
                 }
             }
         ]
-
         result = list(self.invoices.aggregate(pipeline))
         if result:
             return result[0]
@@ -169,7 +168,6 @@ class MongoManager:
             "total_owner": 0,
             "total_stylist": 0
         }
-    
 
     def get_stylist_report(self, stylist_id, from_date, to_date):
         """
@@ -178,7 +176,7 @@ class MongoManager:
         pipeline = [
             {
                 "$match": {
-                    "stylist_id": stylist_id,
+                    "stylist_name": stylist_id,  # فیلتر بر اساس نام آرایشگر
                     "date": {
                         "$gte": from_date,
                         "$lte": to_date
@@ -187,13 +185,12 @@ class MongoManager:
             },
             {
                 "$group": {
-                    "name": "$stylist_id",
+                    "_id": "$stylist_name",  # گروه‌بندی بر اساس نام آرایشگر
                     "total": {"$sum": "$total"},
                     "stylist_profit": {"$sum": "$profit_split.stylist"}
                 }
             }
         ]
-
         result = list(self.invoices.aggregate(pipeline))
         if result:
             return result[0]

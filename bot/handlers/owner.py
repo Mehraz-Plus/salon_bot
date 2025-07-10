@@ -145,6 +145,16 @@ async def list_stylists(event):
         text += f"- {u['name']} |  {u['mobile']} |  موجودی: {balance}\n"
     await event.respond(text)
 
+async def list_stylists2(name):
+    users = mongo.mongo_manager.users.find({"role": "stylist"})
+    text = " آرایشگرها:\n"
+    for u in users:
+        if u['name'] == name:
+            balance = u.get("balance", 0)
+            text += f"- {u['name']} |  {u['mobile']} |  موجودی: {balance}\n"
+            return text
+    
+
 
 async def delete_stylists(event, bot):
     async with bot.conversation(event.sender_id) as conv:
@@ -179,6 +189,7 @@ async def withdraw(event, bot):
         response = await conv.get_response()
         await conv.send_message(" نام آرایشگر را وارد کنید:")
         name = (await conv.get_response()).text.strip()
+        await conv.send_message(mongo.mongo_manager.list_stylists2(name))
         if response.data == b"ok":
             now = mongo.mongo_manager.withdraw(name)
             await conv.send_message(now)
