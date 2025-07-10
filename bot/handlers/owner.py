@@ -27,6 +27,8 @@ async def handle_callback(event, data, bot):
         await delete_products(event, bot)
     elif data == "update_product_price":
         await update_product_price(event, bot)
+    elif data == "withdraw":
+        await withdraw(event, bot)
     
     await event.answer()
 
@@ -168,4 +170,18 @@ async def update_product_price(event, bot):
         price = (await conv.get_response()).text.strip()
         now = mongo.mongo_manager.update_product_price(name, price)
         await conv.send_message(now)
+
+async def withdraw(event, bot):
+    async with bot.conversation(event.sender_id) as conv:
+        buttons = [
+                    [Button.inline(" تایید تسویه", b"ok")]
+                    ]
+        response = await conv.get_response()
+        await conv.send_message(" نام آرایشگر را وارد کنید:")
+        name = (await conv.get_response()).text.strip()
+        if response.data == b"ok":
+            now = mongo.mongo_manager.withdraw(name)
+            await conv.send_message(now)
+            
+
 

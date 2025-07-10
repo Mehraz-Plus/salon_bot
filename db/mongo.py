@@ -113,7 +113,7 @@ class MongoManager:
 # 
     # 📋 تسویه
     def withdraw(self, stylist_id, note=""):
-        user = self.users.find_one({"_id": ObjectId(stylist_id)})
+        user = self.users.find_one({"name": stylist_id})
         if not user:
             return None
         amount = user.get("balance", 0)
@@ -121,7 +121,7 @@ class MongoManager:
             return None
 
         withdrawal = {
-            "stylist_id": ObjectId(stylist_id),
+            "stylist_id": stylist_id,
             "amount": amount,
             "date": datetime.now(timezone.utc),
             "note": note,
@@ -131,11 +131,11 @@ class MongoManager:
 
         # صفر کردن موجودی
         self.users.update_one(
-            {"_id": ObjectId(stylist_id)},
+            {"name": stylist_id},
             {"$set": {"balance": 0}}
         )
 
-        return withdrawal
+        return f"تسویه {amount} با آرایشگر {stylist_id} انجام شد"
 # ##
     def get_profit_report(self, from_date, to_date):
         """
