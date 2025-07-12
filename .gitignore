@@ -5,6 +5,6 @@ __pycache__/
 .env
 config/session.py
 config/settings.py
-
+venv
 *.session
 *.session_journal
