@@ -2,6 +2,7 @@ __pycache__/
 .vscode/
 .git/
 .venv/
+.env
 config/session.py
 config/settings.py
 
