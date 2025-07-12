@@ -12,6 +12,7 @@ sys.path.append(handlers_path)
 # حالا می‌توانید ماژول settings را ایمپورت کنید
 import settings
 from telethon import TelegramClient, events, Button
+from telethon.tl.types import PeerUser
 import mongo
 import owner, stylist
 
@@ -54,6 +55,15 @@ async def main_handler(event):
         
         
     else:
+        @bot.on(events.NewMessage(incoming=True, forwards=False, func=lambda e: e.message.media))
+        async def phone_number(event):
+            if type(event.message.peer_id) == PeerUser:
+                if event.message.media.phone_number and event.message.media.user_id:
+                    if event.message.peer_id.user_id == event.message.media.user_id:
+                        phone_number = event.message.media.phone_number
+                        if not phone_number.startswith('+'):
+                            phone_number = '+' + phone_number
+                        # Here add stylist user_id to DB and respond with a proper message
         user = mongo.mongo_manager.get_user_by_telegram(sender_id)
         if user:
             buttons = [
