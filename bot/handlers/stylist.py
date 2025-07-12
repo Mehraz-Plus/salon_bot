@@ -23,18 +23,40 @@ async def use_product(event, bot):
     product_lst = []
     total_price = 0
     unit_price_count = 0
+    products = mongo.mongo_manager.get_products()
+    PRODUCTS_PER_PAGE = 5  # تعداد محصولات در هر صفحه
+    total_products = len(products)
+    total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
     async with bot.conversation(event.sender_id) as conv:
+        page = 1
         while True:
-            buttons = [
-                [Button.inline("اتمام آرایش", b"end")],
-                ]
-            await conv.send_message(" نام محصولی که استفاده کردی:", buttons=buttons)
+            start_index = (page - 1) * PRODUCTS_PER_PAGE
+            end_index = start_index + PRODUCTS_PER_PAGE
+            paginated_products = products[start_index:end_index]
+            
+            buttons = []
+            for product in paginated_products:
+                buttons.append([Button.inline(product["name"], product["name"].encode())])
+            
+            # افزودن دکمه‌های صفحه‌بندی
+            paginator = paginate(
+                msg="",
+                current_page=page,
+                total_pages=total_pages,
+                data=f"products{PRODUCTS_PER_PAGE}",
+                after=[[Button.inline("اتمام آرایش", b"end")]]
+            )
+            if paginator:
+                buttons.extend(paginator)
+            
+            await conv.send_message("محصولی که استفاده کردی را انتخاب کن:", buttons=buttons)
+            
             response = await conv.get_response()
             if response.data == b"end":
                 break
 
 
-            product_name = (await conv.get_response()).text.strip()
+            product_name = response.data.decode()
             product = mongo.mongo_manager.get_product(product_name)
             if not product:
                 await conv.send_message(" محصول پیدا نشد.")
@@ -121,3 +143,39 @@ async def list_products(event):
     for p in products:
         text += f"- {p['name']} | موجودی: {p['total_weight']} {p['unit']}\n"
     await event.respond(text)
+
+
+
+def navigate(msg, current_page=1, total_pages=1, data=None, delimiter='-'):
+    current_page = int(current_page)
+    total_pages = int(total_pages)
+    if data:
+        data += delimiter
+        keyboard = []
+        if total_pages > current_page + 1:
+            keyboard.append(Button.inline('last', str.encode(data + str(total_pages))))
+        if total_pages > current_page:
+            keyboard.append(Button.inline('next', str.encode(data + str(current_page + 1))))
+        if total_pages > 1:
+            keyboard.append(Button.inline(str(current_page) + ' from ' + str(total_pages)))
+        if current_page > 1:
+            keyboard.append(Button.inline('previous', str.encode(data + str(current_page - 1))))
+        if current_page > 2:
+            keyboard.append(Button.inline('first', str.encode(data + '1')))
+        return keyboard
+    else:
+        return None
+
+def paginate(msg, current_page=1, total_pages=1, data=None, delimiter='-',
+             before=None, after=None):
+    if data:
+        paginator = navigate(msg, current_page, total_pages, data, delimiter)
+        if before or after:
+            paginator = [paginator]
+        if before:
+            paginator = before + paginator
+        if after:
+            paginator.append(after)
+        return paginator
+    else:
+        return None
