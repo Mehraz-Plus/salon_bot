@@ -1,4 +1,4 @@
-python-dotenv==1.0.0
+
 telethon==1.28.5
 pymongo==4.5.0
 jdatetime==4.1.0
