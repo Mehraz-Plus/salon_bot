@@ -23,7 +23,7 @@ async def use_product(event, bot):
     product_lst = []
     total_price = 0
     unit_price_count = 0
-    products = mongo.mongo_manager.get_products()
+    products = mongo.mongo_manager.get_product()
     PRODUCTS_PER_PAGE = 5  # تعداد محصولات در هر صفحه
     total_products = len(products)
     total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
@@ -36,7 +36,10 @@ async def use_product(event, bot):
             
             buttons = []
             for product in paginated_products:
-                buttons.append([Button.inline(product["name"], product["name"].encode())])
+                none_zero = product["total_weight"]
+                none_zero = int(none_zero)
+                if none_zero > 0:
+                    buttons.append([Button.inline(product["name"], product["name"].encode())])
             
             # افزودن دکمه‌های صفحه‌بندی
             paginator = paginate(

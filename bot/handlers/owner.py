@@ -53,19 +53,6 @@ async def add_product(event, bot):
         await conv.send_message(" نام محصول را وارد کنید:")
         name = (await conv.get_response()).text.strip()
         product = mongo.mongo_manager.get_product(name)
-        if product:
-            buttons = [
-                [Button.inline(" اضافه کردن موجودی محصول", b"increase")],
-                ]
-            await conv.send_message(" محصول تکراری است.", buttons=buttons)
-            response = await conv.get_response()
-            if response.data == b"increase":
-                await conv.send_message(" مقدار محصول را وارد کنید:")
-                weight = float((await conv.get_response()).text.strip())
-                now = mongo.mongo_manager.increase_product_stock(name, weight)
-                await conv.send_message(now)
-
-                
 
         await conv.send_message(" واحد محصول (مثل گرم) را وارد کنید:")
         unit = (await conv.get_response()).text.strip()
@@ -75,6 +62,10 @@ async def add_product(event, bot):
 
         await conv.send_message(" قیمت هر واحد را وارد کنید:")
         price = float((await conv.get_response()).text.strip())
+        if product and product["price_per_gram"] == price:
+            now = mongo.mongo_manager.increase_product_stock(name, weight)
+            await conv.send_message(now)
+
 
         mongo.mongo_manager.add_product(name, unit, weight, price)
         await conv.send_message(f"✅ محصول {name} ثبت شد.")
