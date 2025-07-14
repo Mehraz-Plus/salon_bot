@@ -71,7 +71,9 @@ class MongoManager:
 
     def list_products(self):
         return list(self.products.find())
-
+    
+    def list_products2(self):
+        return self.products.find()
     # 📋 فاکتور
     def create_invoice(self, stylist_id, customer_name, customer_price, items):
         """
@@ -111,15 +113,13 @@ class MongoManager:
         )
 
         return invoice
-# 
     # 📋 تسویه
     def withdraw(self, stylist_id, note=""):
         user = self.users.find_one({"name": stylist_id})
-        if not user:
-            return None
+        
         amount = user.get("balance", 0)
         if amount <= 0:
-            return None
+            return f"موجودی حساب صفر تومان است."
 
         withdrawal = {
             "stylist_id": stylist_id,
@@ -129,6 +129,7 @@ class MongoManager:
         }
 
         self.withdrawals.insert_one(withdrawal)
+        
 
         # صفر کردن موجودی
         self.users.update_one(
@@ -136,7 +137,7 @@ class MongoManager:
             {"$set": {"balance": 0}}
         )
 
-        return f"تسویه {amount} با آرایشگر {stylist_id} انجام شد"
+        return f"تسویه {amount} تومان با آرایشگر {stylist_id} انجام شد"
 # ##
     def get_profit_report(self, from_date, to_date):
         """

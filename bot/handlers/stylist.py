@@ -23,7 +23,7 @@ async def use_product(event, bot):
     product_lst = []
     total_price = 0
     unit_price_count = 0
-    products = mongo.mongo_manager.get_product()
+    products = mongo.mongo_manager.list_products2()
     PRODUCTS_PER_PAGE = 5  # تعداد محصولات در هر صفحه
     total_products = len(products)
     total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE

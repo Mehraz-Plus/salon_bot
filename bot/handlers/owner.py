@@ -138,7 +138,7 @@ async def list_stylists(event):
 
 async def list_stylists2(name):
     users = mongo.mongo_manager.users.find({"role": "stylist"})
-    text = " آرایشگرها:\n"
+    text = " آرایشگر \n"
     for u in users:
         if u['name'] == name:
             balance = u.get("balance", 0)
@@ -174,16 +174,13 @@ async def update_product_price(event, bot):
 
 async def withdraw(event, bot):
     async with bot.conversation(event.sender_id) as conv:
-        buttons = [
-                    [Button.inline(" تایید تسویه", b"ok")]
-                    ]
-        response = await conv.get_response()
+        
         await conv.send_message(" نام آرایشگر را وارد کنید:")
         name = (await conv.get_response()).text.strip()
-        await conv.send_message(mongo.mongo_manager.list_stylists2(name))
-        if response.data == b"ok":
-            now = mongo.mongo_manager.withdraw(name)
-            await conv.send_message(now)
+        stylists_info = await list_stylists2(name)
+        await conv.send_message(stylists_info)    
+        now = mongo.mongo_manager.withdraw(name)
+        await conv.send_message(now)
             
 
 
