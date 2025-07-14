@@ -71,6 +71,8 @@ class MongoManager:
 
     def list_products(self):
         return list(self.products.find())
+    def count_products(self):
+        return self.products.count_documents({})
     
     def list_products2(self):
         return self.products.find()
@@ -84,15 +86,18 @@ class MongoManager:
         ]
         """
         total = sum(item["total_price"] for item in items)
-        stylist_profit = total * 0.4, 2
-        owner_profit = total * 0.6, 2
+        end_pro = customer_price - total
+        stylist_profit = end_pro * 0.4, 2
+        owner_profit = end_pro * 0.6, 2
+        for dic in items:
+            item_lst = list(dic.keys())
 
         invoice = {
             "id": stylist_id,
             "customer_name": customer_name,
             "customer_price" : customer_price,
             "date": datetime.now(timezone.utc),
-            "items": items,
+            "items": item_lst,
             "total": total,
             "profit_split": {
                 "stylist": stylist_profit,
@@ -102,13 +107,9 @@ class MongoManager:
 
         self.invoices.insert_one(invoice)
 
-        # آپدیت موجودی هر محصول
-        for item in items:
-            self.update_product_stock(item["product_id"], item["amount"])
-
         # افزایش موجودی آرایشگر
         self.users.update_one(
-            {"_id": ObjectId(stylist_id)},
+            {"name": stylist_id},
             {"$inc": {"balance": stylist_profit}}
         )
 

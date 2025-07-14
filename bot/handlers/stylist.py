@@ -20,25 +20,26 @@ async def handle_callback(event, data, bot):
 
 # 
 async def use_product(event, bot):
-    product_lst = []
-    total_price = 0
-    unit_price_count = 0
-    products = mongo.mongo_manager.list_products2()
-    PRODUCTS_PER_PAGE = 5  # تعداد محصولات در هر صفحه
-    total_products = len(products)
-    total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
+    
+    # products = mongo.mongo_manager.list_products2()
+    PRODUCTS_PER_PAGE = 5  
+    items = []
+    
+    # total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
+
     async with bot.conversation(event.sender_id) as conv:
         page = 1
         while True:
-            start_index = (page - 1) * PRODUCTS_PER_PAGE
-            end_index = start_index + PRODUCTS_PER_PAGE
-            paginated_products = products[start_index:end_index]
+            total_products = mongo.mongo_manager.list_products2().count_documents({})
+            total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
+            
+            # ایجاد Cursor جدید برای هر صفحه
+            cursor = mongo.mongo_manager.list_products2().skip((page - 1) * PRODUCTS_PER_PAGE).limit(PRODUCTS_PER_PAGE)
             
             buttons = []
-            for product in paginated_products:
+            async for product in cursor:  # استفاده از async for برای Cursor
                 none_zero = product["total_weight"]
-                none_zero = int(none_zero)
-                if none_zero > 0:
+                if int(none_zero) > 0:
                     buttons.append([Button.inline(product["name"], product["name"].encode())])
             
             # افزودن دکمه‌های صفحه‌بندی
@@ -52,12 +53,15 @@ async def use_product(event, bot):
             if paginator:
                 buttons.extend(paginator)
             
+            # اطمینان از اینکه دکمه‌ها به درستی فرمت شده‌اند
+            if not buttons:
+                buttons = [[]]
+            
             await conv.send_message("محصولی که استفاده کردی را انتخاب کن:", buttons=buttons)
             
             response = await conv.get_response()
             if response.data == b"end":
                 break
-
 
             product_name = response.data.decode()
             product = mongo.mongo_manager.get_product(product_name)
@@ -73,26 +77,21 @@ async def use_product(event, bot):
             # update in db
             return_method = mongo.mongo_manager.reduce_product_stock(product_name, amount)
             await event.reply(return_method)
-            
-
-        # محاسبه
             unit_price = product["price_per_gram"]
-            unit_price_count += unit_price
-            total_price += round(unit_price * amount, 2)
-            product_lst.append(product["name"])
-
+            total_price += unit_price * amount
+            
+            items.append({
+            "product_name": product["name"],
+            "unit_price": unit_price,
+            "total_price": total_price
+            })
+        # محاسبه
         await conv.send_message(" نام مشتری:")
         customer_name = (await conv.get_response()).text.strip()
 
         await conv.send_message("پرداخت نهایی مشتری: ")
         customer_price = float((await conv.get_response()).text.strip())
 
-        total_price = customer_price - total_price
-        items = [{
-            "product_name": product_lst,
-            "unit_price": unit_price,
-            "total_price": total_price
-        }]
         sender = await event.get_sender()
         sender_id = sender.id
             # ثبت در دیتابیس
