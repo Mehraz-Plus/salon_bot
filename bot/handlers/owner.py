@@ -100,21 +100,6 @@ async def report_profit(event, bot):
             f"سهم آرایشگرها: {report['total_stylist']}"
         )
             
-        
-   
-
-    report = mongo.mongo_manager.get_profit_report(from_date, to_date)
-    if not report:
-        await event.respond(" هیچ درآمدی ثبت نشده.")
-        return
-
-    await event.respond(
-        f" گزارش سود:\n"
-        f"کل: {report['total']}\n"
-        f"سهم سالن: {report['total_owner']}\n"
-        f"سهم آرایشگرها: {report['total_stylist']}"
-    )
-
 # 
 async def list_products(event):
     products = mongo.mongo_manager.list_products()

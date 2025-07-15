@@ -1,12 +1,19 @@
 import sys
 import os
 
+
+
+
 path = os.path.join(os.path.dirname(__file__), '..', 'db')
 sys.path.append(path)
+path1 = os.path.join(os.path.dirname(__file__), '..', 'bot')
+sys.path.append(path1)
 import jdatetime
 import mongo
+
 from telethon import events, Button
 from datetime import datetime, timezone
+from telethon.tl.custom.button import Button
 
 
 async def handle_callback(event, data, bot):
@@ -18,96 +25,98 @@ async def handle_callback(event, data, bot):
         await list_products(event)
     await event.answer()
 
+
 # 
 async def use_product(event, bot):
-    
-    # products = mongo.mongo_manager.list_products2()
     PRODUCTS_PER_PAGE = 5  
     items = []
-    
-    total_products = mongo.mongo_manager.count_products()  # استفاده از count_products
+
+    total_products = mongo.mongo_manager.count_products()
     total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
 
     async with bot.conversation(event.sender_id) as conv:
         page = 1
         while True:
-            
-            
-            # ایجاد Cursor جدید برای هر صفحه
             cursor = mongo.mongo_manager.list_products2().skip((page - 1) * PRODUCTS_PER_PAGE).limit(PRODUCTS_PER_PAGE)
-            
+
             buttons = []
-            for product in cursor:  # استفاده از async for برای Cursor
-                none_zero = product["total_weight"]
-                if int(none_zero) > 0:
-                    buttons.append([Button.inline(product["name"], product["name"].encode())])
-            
-            # افزودن دکمه‌های صفحه‌بندی
-            paginator = paginate(
-                msg="",
-                current_page=page,
-                total_pages=total_pages,
-                data=f"products{PRODUCTS_PER_PAGE}",
-                after=[[Button.inline("اتمام آرایش", b"end")]]
-            )
-            if paginator:
-                for row in paginator:
-                    buttons.append(row)
+            for product in cursor:
+                if int(product["total_weight"]) > 0:
+                    buttons.append([Button.text(product["name"])])
 
-            assert isinstance(buttons, list)
-            cleaned_buttons = []
-            for row in buttons:
-                if isinstance(row, list):
-                    cleaned_buttons.append(row)
-                else:
-                    cleaned_buttons.append([row])
+            # دکمه‌های صفحه‌بندی
+            nav_buttons = []
+            if total_pages > 1:
+                if page > 1:
+                    nav_buttons.append(Button.text("صفحه قبل"))
+                if page < total_pages:
+                    nav_buttons.append(Button.text("صفحه بعد"))
 
-            buttons = cleaned_buttons
-            
+            if nav_buttons:
+                buttons.append(nav_buttons)
+            buttons.append([Button.text("اتمام آرایش")])
+
             if not buttons:
                 await conv.send_message("محصولی برای نمایش موجود نیست.")
                 break
+
             buttons = flatten_buttons(buttons)
             await conv.send_message("محصولی که استفاده کردی را انتخاب کن:", buttons=buttons)
-            
+
             response = await conv.get_response()
-            if response.data == b"end":
+            text = response.text.strip()
+
+            if text == "صفحه بعد":
+                page += 1
+                continue
+            elif text == "صفحه قبل":
+                page -= 1
+                continue
+            elif text == "اتمام آرایش":
                 break
 
-            product_name = response.data.decode()
+            product_name = text
             product = mongo.mongo_manager.get_product(product_name)
             if not product:
-                await conv.send_message(" محصول پیدا نشد.")
-                return
+                await conv.send_message("محصول پیدا نشد.")
+                continue
 
-            await conv.send_message(" چند گرم استفاده کردی؟")
-            amount = float((await conv.get_response()).text.strip())
+            await conv.send_message("چند گرم استفاده کردی؟")
+            try:
+                amount = float((await conv.get_response()).text.strip())
+            except:
+                await conv.send_message("مقدار نامعتبر است. لطفاً یک عدد وارد کن.")
+                continue
 
-            
-
-            # update in db
+            # کاهش موجودی در دیتابیس
             return_method = mongo.mongo_manager.reduce_product_stock(product_name, amount)
             await event.reply(return_method)
-            unit_price = product["price_per_gram"]
+
+            unit_price = float(product["price_per_gram"])
             total_price = unit_price * amount
-            
             items.append({
-            "product_name": product["name"],
-            "unit_price": unit_price,
-            "total_price": total_price
+                "product_name": product["name"],
+                "unit_price": unit_price,
+                "total_price": total_price
             })
-        # محاسبه
-        await conv.send_message(" نام مشتری:")
+
+        # اطلاعات نهایی
+        await conv.send_message("نام مشتری:")
         customer_name = (await conv.get_response()).text.strip()
 
-        await conv.send_message("پرداخت نهایی مشتری: ")
-        customer_price = float((await conv.get_response()).text.strip())
+        await conv.send_message("پرداخت نهایی مشتری:")
+        try:
+            customer_price = float((await conv.get_response()).text.strip())
+        except:
+            await conv.send_message("مبلغ نامعتبر وارد شده. عملیات لغو شد.")
+            return
 
         sender = await event.get_sender()
         sender_id = sender.id
-            # ثبت در دیتابیس
+        print(sender_id)
+        user = mongo.mongo_manager.get_user_by_telegram2(sender_id)
         invoice = mongo.mongo_manager.create_invoice(
-            stylist_id=mongo.mongo_manager.get_user_by_telegram2(sender_id)["name"],
+            stylist_id=user["name"],
             customer_name=customer_name,
             customer_price=customer_price,
             items=items
@@ -120,7 +129,6 @@ def flatten_buttons(buttons):
     flattened = []
     for row in buttons:
         if isinstance(row, list):
-            # اگر داخل row، عناصر باز لیست بودن
             if any(isinstance(el, list) for el in row):
                 for subrow in row:
                     if isinstance(subrow, list):
@@ -132,6 +140,7 @@ def flatten_buttons(buttons):
         else:
             flattened.append([row])
     return flattened
+
 
 
 async def stylist_report(event, bot):
@@ -150,7 +159,7 @@ async def stylist_report(event, bot):
         # اطمینان از اینکه تاریخ‌ها در منطقه زمانی UTC هستند
         from_date = from_date.replace(tzinfo=timezone.utc)
         to_date = to_date.replace(tzinfo=timezone.utc)
-
+    
     stylist = mongo.mongo_manager.get_user_by_telegram(event.sender_id)
     report = mongo.mongo_manager.get_stylist_report(stylist["name"], from_date, to_date)
     if not report:

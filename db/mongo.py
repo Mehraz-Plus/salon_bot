@@ -43,7 +43,7 @@ class MongoManager:
     def get_user_by_telegram(self, telegram_id):
         return self.users.find_one({"telegram_id": telegram_id})
     def get_user_by_telegram2(self, telegram_id):
-        return self.users.find_one({"id": telegram_id})
+        return self.users.find_one({"telegram_id": telegram_id})
 
     def get_user_by_mobile(self, mobile):
         return self.users.find_one({"mobile": mobile})
@@ -87,8 +87,8 @@ class MongoManager:
         """
         total = sum(item["total_price"] for item in items)
         end_pro = customer_price - total
-        stylist_profit = end_pro * 0.4, 2
-        owner_profit = end_pro * 0.6, 2
+        stylist_profit = end_pro * 0.4
+        owner_profit = end_pro * 0.6
         for dic in items:
             item_lst = list(dic.keys())
 
@@ -144,6 +144,8 @@ class MongoManager:
         """
         گزارش سود کلی سالن بین دو تاریخ
         """
+        print(from_date)
+        print(to_date)
         pipeline = [
             {
                 "$match": {
@@ -175,10 +177,13 @@ class MongoManager:
         """
         گزارش درآمد آرایشگر بین دو تاریخ
         """
+        print(from_date)
+        print(to_date)
+
         pipeline = [
             {
                 "$match": {
-                    "stylist_name": stylist_id,  # فیلتر بر اساس نام آرایشگر
+                    "id": stylist_id,  # فیلتر بر اساس نام آرایشگر
                     "date": {
                         "$gte": from_date,
                         "$lte": to_date
@@ -243,7 +248,7 @@ class MongoManager:
         product = self.get_product(product_id)
 
         current_stock = product["total_weight"]
-        new_stock = round(current_stock - amount, 2)
+        new_stock = current_stock - amount
 
         if new_stock <= 0:
             # موجودی تموم شد
