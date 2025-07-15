@@ -25,19 +25,19 @@ async def use_product(event, bot):
     PRODUCTS_PER_PAGE = 5  
     items = []
     
-    # total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
+    total_products = mongo.mongo_manager.count_products()  # استفاده از count_products
+    total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
 
     async with bot.conversation(event.sender_id) as conv:
         page = 1
         while True:
-            total_products = mongo.mongo_manager.list_products2().count_documents({})
-            total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
+            
             
             # ایجاد Cursor جدید برای هر صفحه
             cursor = mongo.mongo_manager.list_products2().skip((page - 1) * PRODUCTS_PER_PAGE).limit(PRODUCTS_PER_PAGE)
             
             buttons = []
-            async for product in cursor:  # استفاده از async for برای Cursor
+            for product in cursor:  # استفاده از async for برای Cursor
                 none_zero = product["total_weight"]
                 if int(none_zero) > 0:
                     buttons.append([Button.inline(product["name"], product["name"].encode())])
@@ -51,12 +51,23 @@ async def use_product(event, bot):
                 after=[[Button.inline("اتمام آرایش", b"end")]]
             )
             if paginator:
-                buttons.extend(paginator)
+                for row in paginator:
+                    buttons.append(row)
+
+            assert isinstance(buttons, list)
+            cleaned_buttons = []
+            for row in buttons:
+                if isinstance(row, list):
+                    cleaned_buttons.append(row)
+                else:
+                    cleaned_buttons.append([row])
+
+            buttons = cleaned_buttons
             
-            # اطمینان از اینکه دکمه‌ها به درستی فرمت شده‌اند
             if not buttons:
-                buttons = [[]]
-            
+                await conv.send_message("محصولی برای نمایش موجود نیست.")
+                break
+            buttons = flatten_buttons(buttons)
             await conv.send_message("محصولی که استفاده کردی را انتخاب کن:", buttons=buttons)
             
             response = await conv.get_response()
@@ -78,7 +89,7 @@ async def use_product(event, bot):
             return_method = mongo.mongo_manager.reduce_product_stock(product_name, amount)
             await event.reply(return_method)
             unit_price = product["price_per_gram"]
-            total_price += unit_price * amount
+            total_price = unit_price * amount
             
             items.append({
             "product_name": product["name"],
@@ -104,7 +115,25 @@ async def use_product(event, bot):
 
         await conv.send_message(f"✅ ثبت شد. کل مبلغ: {invoice['total']}")
 
-# 
+
+def flatten_buttons(buttons):
+    flattened = []
+    for row in buttons:
+        if isinstance(row, list):
+            # اگر داخل row، عناصر باز لیست بودن
+            if any(isinstance(el, list) for el in row):
+                for subrow in row:
+                    if isinstance(subrow, list):
+                        flattened.append(subrow)
+                    else:
+                        flattened.append([subrow])
+            else:
+                flattened.append(row)
+        else:
+            flattened.append([row])
+    return flattened
+
+
 async def stylist_report(event, bot):
     async with bot.conversation(event.sender_id) as conv:
         await conv.send_message(" تاریخ اولیه را وارد کنید. مثال 1402/01/01 ")
