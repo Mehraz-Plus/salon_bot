@@ -154,7 +154,7 @@ async def stylist_report(event, bot):
         to_date_jalali = jdatetime.datetime.strptime(to_date_str, "%Y/%m/%d")
         
         from_date = from_date_jalali.togregorian()
-        to_date = to_date_jalali.togregorian()
+        to_date = to_date_jalali.togregorian().replace(hour=23, minute=59, second=59)
         
         # اطمینان از اینکه تاریخ‌ها در منطقه زمانی UTC هستند
         from_date = from_date.replace(tzinfo=timezone.utc)
