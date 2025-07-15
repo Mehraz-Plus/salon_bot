@@ -25,8 +25,6 @@ async def handle_callback(event, data, bot):
         await list_products(event)
     await event.answer()
 
-
-# 
 async def use_product(event, bot):
     PRODUCTS_PER_PAGE = 5  
     items = []
@@ -91,14 +89,28 @@ async def use_product(event, bot):
             # کاهش موجودی در دیتابیس
             return_method = mongo.mongo_manager.reduce_product_stock(product_name, amount)
             await event.reply(return_method)
-
-            unit_price = float(product["price_per_gram"])
-            total_price = unit_price * amount
-            items.append({
-                "product_name": product["name"],
-                "unit_price": unit_price,
-                "total_price": total_price
-            })
+            current_stock = product["total_weight"]
+        
+            if current_stock <=0: 
+                products = mongo.mongo_manager.get_products()
+                for pro in products:
+                    if pro["name"] == product_name:
+                        if pro["total_weight"] > 0:
+                            unit_price = pro["price_per_gram"]
+                            total_price = unit_price * amount
+                            items.append({
+                                "product_name": product["name"],
+                                "unit_price": unit_price,
+                                "total_price": total_price
+                            })
+            else:
+                unit_price = float(product["price_per_gram"])
+                total_price = unit_price * amount
+                items.append({
+                    "product_name": product["name"],
+                    "unit_price": unit_price,
+                    "total_price": total_price
+                })
 
         # اطلاعات نهایی
         await conv.send_message("نام مشتری:")
@@ -122,8 +134,7 @@ async def use_product(event, bot):
             items=items
         )
 
-        await conv.send_message(f"✅ ثبت شد. کل مبلغ: {invoice['total']}")
-
+        await conv.send_message(f"✅ ثبت شد. کل مبلغ: {customer_price}")
 
 def flatten_buttons(buttons):
     flattened = []
@@ -140,8 +151,6 @@ def flatten_buttons(buttons):
         else:
             flattened.append([row])
     return flattened
-
-
 
 async def stylist_report(event, bot):
     async with bot.conversation(event.sender_id) as conv:
@@ -171,7 +180,6 @@ async def stylist_report(event, bot):
         f"کل درآمد: {report['total']}\n"
         f"سهم شما: {report['stylist_profit']}"
     )
-# 
 
 async def list_products(event):
     products = mongo.mongo_manager.list_products()
@@ -183,8 +191,6 @@ async def list_products(event):
     for p in products:
         text += f"- {p['name']} | موجودی: {p['total_weight']} {p['unit']}\n"
     await event.respond(text)
-
-
 
 def navigate(msg, current_page=1, total_pages=1, data=None, delimiter='-'):
     current_page = int(current_page)

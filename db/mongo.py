@@ -68,6 +68,8 @@ class MongoManager:
 
     def get_product(self, product_id):
         return self.products.find_one({"name": product_id})
+    def get_products(self):
+        return self.products.find()
 
     def list_products(self):
         return list(self.products.find())
@@ -239,7 +241,6 @@ class MongoManager:
                 "count": result.deleted_count
             }
     
-
     def reduce_product_stock(self, product_id, amount):
         """
         کم کردن موجودی محصول (مصرف توسط آرایشگر).
@@ -248,6 +249,30 @@ class MongoManager:
         product = self.get_product(product_id)
 
         current_stock = product["total_weight"]
+        print(current_stock)
+        if current_stock <=0 :
+            
+            products = self.get_products()
+            for pro in products:
+                if pro["name"] == product_id:
+                    if pro["total_weight"] > 0:
+                        real = pro["price_per_gram"]
+                        print(real)
+                        new_stock = pro["total_weight"] - amount
+                        if new_stock <= 0:
+                            # موجودی تموم شد
+                            self.products.update_one(
+                                {"name": pro["name"], "price_per_gram" : real},
+                                {"$set": {"total_weight": 0}}
+                                )
+                            return (f"⚠️ محصول «{product['name']}» تمام شد!")
+
+                        self.products.update_one(
+                        {"name": product["name"], "price_per_gram" : real},
+                        {"$set": {"total_weight": new_stock}}
+                         )
+                        return f"✅ {amount} از «{product['name']}» کم شد. موجودی جدید: {new_stock}"
+            
         new_stock = current_stock - amount
 
         if new_stock <= 0:
@@ -256,7 +281,7 @@ class MongoManager:
                 {"name": product["name"]},
                 {"$set": {"total_weight": 0}}
                 )
-            return(f"⚠️ محصول «{product['name']}» تمام شد!")
+            return (f"⚠️ محصول «{product['name']}» تمام شد!")
             
         # موجودی هنوز مثبت است
         self.products.update_one(
@@ -265,7 +290,6 @@ class MongoManager:
         )
         return f"✅ {amount} از «{product['name']}» کم شد. موجودی جدید: {new_stock}"
     
-
     def increase_product_stock(self, product_id, amount):
         """
         اضافه کردن موجودی محصول (خرید توسط مدیر).
