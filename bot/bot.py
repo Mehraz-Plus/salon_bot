@@ -33,9 +33,9 @@ async def main_handler(event):
     sender_id = sender.id
     
     user_id = sender.username
-    
-    
-    
+    print(sender_id,"sender")
+    print(type(sender_id))
+    print(user_id,"user")
     
 
     if is_owner(sender_id):
@@ -55,7 +55,6 @@ async def main_handler(event):
         
         
     else:
-        
         user = mongo.mongo_manager.get_user_by_telegram(sender_id)
         if user:
             buttons = [
@@ -76,7 +75,18 @@ async def main_handler(event):
                 mongo.mongo_manager.update_user_telegram_id(user_id, sender_id)
 
             else:
-                await event.reply("شما در سیستم ثبت نشده‌اید. لطفاً با مدیر تماس بگیرید.")
+                sender_id2 = str(sender_id)
+                user2 = mongo.mongo_manager.get_user_by_telegram2(sender_id2)
+                
+                if user2:
+                    buttons = [
+                    [Button.inline(" ثبت مصرف مواد", b"use_product")],
+                    [Button.inline(" گزارش کارکرد", b"stylist_report")],
+                    [Button.inline(" موجودی محصولات", b"list_products")],
+                ]
+                    await event.reply(f"سلام {user2['name']} !خوش اومدی", buttons=buttons)
+                else:
+                    await event.reply("شما در سیستم ثبت نشده‌اید. لطفاً با مدیر تماس بگیرید.")
     return
 
 

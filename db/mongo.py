@@ -43,7 +43,10 @@ class MongoManager:
     def get_user_by_telegram(self, telegram_id):
         return self.users.find_one({"telegram_id": telegram_id})
     def get_user_by_telegram2(self, telegram_id):
-        return self.users.find_one({"telegram_id": telegram_id})
+        return self.users.find_one({"id": telegram_id})
+    
+    def get_user_by_telegram3(self, telegram_id):
+        return self.users.find_one({"id": telegram_id})
 
     def get_user_by_mobile(self, mobile):
         return self.users.find_one({"mobile": mobile})
