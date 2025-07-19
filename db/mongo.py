@@ -103,7 +103,7 @@ class MongoManager:
             "customer_price" : customer_price,
             "date": datetime.now(timezone.utc),
             "items": item_lst,
-            "total": total,
+            "total": customer_price,
             "profit_split": {
                 "stylist": stylist_profit,
                 "owner": owner_profit,
