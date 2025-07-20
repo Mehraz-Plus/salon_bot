@@ -76,8 +76,12 @@ class MongoManager:
 
     def list_products(self):
         return list(self.products.find())
+    
     def count_products(self):
         return self.products.count_documents({})
+    
+    def count_stylists(self):
+        return self.users.count_documents({})
     
     def list_products2(self):
         return self.products.find()
@@ -222,7 +226,6 @@ class MongoManager:
         if result.deleted_count > 0:
             print(f"{result.deleted_count} آرایشگر با نام {name} حذف شد.")
         
-        
     def delete_product(self, name):
             """
             حذف محصول(ها) بر اساس نام.
@@ -307,6 +310,7 @@ class MongoManager:
             {"$set": {"total_weight": new_stock}}
         )
         return f"✅ {amount} به موجودی «{product['name']}» اضافه شد. موجودی جدید: {new_stock}"
+    
     def update_product_price(self, product_id, new_price):
         """
         تغییر قیمت هر واحد محصول (توسط مدیر).

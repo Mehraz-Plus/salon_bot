@@ -32,7 +32,6 @@ async def handle_callback(event, data, bot):
     
     await event.answer()
 
-
 async def add_stylist(event, bot):
     async with bot.conversation(event.sender_id) as conv:
         await conv.send_message(" آیدی تلگرام آرایشگر را بدون @ وارد کنید: ")
@@ -47,7 +46,6 @@ async def add_stylist(event, bot):
         mongo.mongo_manager.add_user(telegram_id, name, mobile)
         await conv.send_message(f"✅ آرایشگر {name} با شماره {mobile} اضافه شد.")
 
- 
 async def add_product(event, bot):
     async with bot.conversation(event.sender_id) as conv:
         await conv.send_message(" نام محصول را وارد کنید:")
@@ -70,7 +68,6 @@ async def add_product(event, bot):
         mongo.mongo_manager.add_product(name, unit, weight, price)
         await conv.send_message(f"✅ محصول {name} ثبت شد.")
 
-###
 async def report_profit(event, bot):
     async with bot.conversation(event.sender_id) as conv:
         await conv.send_message(" تاریخ اولیه را وارد کنید. مثال 1402/01/01 ")
@@ -100,7 +97,6 @@ async def report_profit(event, bot):
             f"سهم آرایشگرها: {report['total_stylist']}"
         )
             
-# 
 async def list_products(event):
     products = mongo.mongo_manager.list_products()
     if not products:
@@ -112,7 +108,6 @@ async def list_products(event):
         text += f"- {p['name']} | موجودی: {p['total_weight']} {p['unit']} | قیمت: {p['price_per_gram']} / واحد\n"
     await event.respond(text)
 
-# 
 async def list_stylists(event):
     users = mongo.mongo_manager.users.find({"role": "stylist"})
     text = " آرایشگرها:\n"
@@ -129,33 +124,169 @@ async def list_stylists2(name):
             balance = u.get("balance", 0)
             text += f"- {u['name']} |  {u['mobile']} |  موجودی: {balance}\n"
             return text
-    
-
 
 async def delete_stylists(event, bot):
-    async with bot.conversation(event.sender_id) as conv:
-        await conv.send_message(" نام آرایشگر را وارد کنید:")
-        name = (await conv.get_response()).text.strip()
-        mongo.mongo_manager.delete_stylist(name)
-        await event.reply(f"آرایشگر {name} حذف شد")
+    PRODUCTS_PER_PAGE = 5  
+    items = []
 
+    total_products = mongo.mongo_manager.count_stylists()
+    total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
+    async with bot.conversation(event.sender_id) as conv:
+        page = 1
+        while True:
+            cursor = mongo.mongo_manager.users.find({"role": "stylist"}).skip((page - 1) * PRODUCTS_PER_PAGE).limit(PRODUCTS_PER_PAGE)
+
+            buttons = []
+            for user in cursor:
+                buttons.append([Button.text(user["name"])])
+
+            # دکمه‌های صفحه‌بندی
+            nav_buttons = []
+            if total_pages > 1:
+                if page > 1:
+                    nav_buttons.append(Button.text("صفحه قبل"))
+                if page < total_pages:
+                    nav_buttons.append(Button.text("صفحه بعد"))
+
+            if nav_buttons:
+                buttons.append(nav_buttons)
+            buttons.append([Button.text("بازگشت")])
+
+            if not buttons:
+                await conv.send_message("آرایشگری برای نمایش موجود نیست")
+                break
+
+            buttons = flatten_buttons(buttons)
+            await conv.send_message("آرایشگری که میخوای حذف کنی انتخاب کن: ", buttons=buttons)
+
+            response = await conv.get_response()
+            text = response.text.strip()
+
+            if text == "صفحه بعد":
+                page += 1
+                continue
+            elif text == "صفحه قبل":
+                page -= 1
+                continue
+            elif text == "بازگشت":
+                break
+
+            name = text
+
+
+            mongo.mongo_manager.delete_stylist(name)
+            await event.reply(f"آرایشگر {name} حذف شد")
 
 async def delete_products(event, bot):
-    async with bot.conversation(event.sender_id) as conv:
-        await conv.send_message(" نام محصول را وارد کنید: ")
-        name = (await conv.get_response()).text.strip()
-        mongo.mongo_manager.delete_product(name)
-        await event.reply(f"محصول {name} حذف شد")
+    PRODUCTS_PER_PAGE = 5  
+    items = []
 
-        
-async def update_product_price(event, bot):
+    total_products = mongo.mongo_manager.count_products()
+    total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
     async with bot.conversation(event.sender_id) as conv:
-        await conv.send_message(" نام محصول را وارد کنید: ")
-        name = (await conv.get_response()).text.strip()
-        await conv.send_message("قیمت جدید هر واحد محصول را وارد کنید: ")
-        price = (await conv.get_response()).text.strip()
-        now = mongo.mongo_manager.update_product_price(name, price)
-        await conv.send_message(now)
+        page = 1
+        while True:
+            cursor = mongo.mongo_manager.list_products2().skip((page - 1) * PRODUCTS_PER_PAGE).limit(PRODUCTS_PER_PAGE)
+
+            buttons = []
+            for product in cursor:
+                if int(product["total_weight"]) > 0:
+                    buttons.append([Button.text(product["name"])])
+
+            # دکمه‌های صفحه‌بندی
+            nav_buttons = []
+            if total_pages > 1:
+                if page > 1:
+                    nav_buttons.append(Button.text("صفحه قبل"))
+                if page < total_pages:
+                    nav_buttons.append(Button.text("صفحه بعد"))
+
+            if nav_buttons:
+                buttons.append(nav_buttons)
+            buttons.append([Button.text("بازگشت")])
+
+            if not buttons:
+                await conv.send_message("محصولی برای نمایش موجود نیست.")
+                break
+
+            buttons = flatten_buttons(buttons)
+            await conv.send_message("محصولی که میخوای حذف کنی انتخاب کن: ", buttons=buttons)
+
+            response = await conv.get_response()
+            text = response.text.strip()
+
+            if text == "صفحه بعد":
+                page += 1
+                continue
+            elif text == "صفحه قبل":
+                page -= 1
+                continue
+            elif text == "بازگشت":
+                break
+
+            name = text
+            product = mongo.mongo_manager.get_product(name)
+            if not product:
+                await conv.send_message("محصول پیدا نشد.")
+                continue
+            mongo.mongo_manager.delete_product(name)
+            await event.reply(f"محصول {name} حذف شد")
+     
+async def update_product_price(event, bot):
+    PRODUCTS_PER_PAGE = 5  
+    items = []
+    total_products = mongo.mongo_manager.count_products()
+    total_pages = (total_products + PRODUCTS_PER_PAGE - 1) // PRODUCTS_PER_PAGE
+    async with bot.conversation(event.sender_id) as conv:
+        page = 1
+        while True:
+            cursor = mongo.mongo_manager.list_products2().skip((page - 1) * PRODUCTS_PER_PAGE).limit(PRODUCTS_PER_PAGE)
+
+            buttons = []
+            for product in cursor:
+                if int(product["total_weight"]) > 0:
+                    buttons.append([Button.text(product["name"])])
+
+            # دکمه‌های صفحه‌بندی
+            nav_buttons = []
+            if total_pages > 1:
+                if page > 1:
+                    nav_buttons.append(Button.text("صفحه قبل"))
+                if page < total_pages:
+                    nav_buttons.append(Button.text("صفحه بعد"))
+
+            if nav_buttons:
+                buttons.append(nav_buttons)
+            buttons.append([Button.text("بازگشت")])
+
+            if not buttons:
+                await conv.send_message("محصولی برای نمایش موجود نیست.")
+                break
+
+            buttons = flatten_buttons(buttons)
+            await conv.send_message("محصولی که میخوای قیمتشو تغیر بدی انتخاب کن: ", buttons=buttons)
+
+            response = await conv.get_response()
+            text = response.text.strip()
+
+            if text == "صفحه بعد":
+                page += 1
+                continue
+            elif text == "صفحه قبل":
+                page -= 1
+                continue
+            elif text == "بازگشت":
+                break
+
+            name = text
+            product = mongo.mongo_manager.get_product(name)
+            if not product:
+                await conv.send_message("محصول پیدا نشد.")
+                continue
+            await conv.send_message("قیمت جدید هر واحد محصول را وارد کنید: ")
+            price = (await conv.get_response()).text.strip()
+            now = mongo.mongo_manager.update_product_price(name, price)
+            await conv.send_message(now)
 
 async def withdraw(event, bot):
     async with bot.conversation(event.sender_id) as conv:
@@ -166,6 +297,22 @@ async def withdraw(event, bot):
         await conv.send_message(stylists_info)    
         now = mongo.mongo_manager.withdraw(name)
         await conv.send_message(now)
+
+def flatten_buttons(buttons):
+    flattened = []
+    for row in buttons:
+        if isinstance(row, list):
+            if any(isinstance(el, list) for el in row):
+                for subrow in row:
+                    if isinstance(subrow, list):
+                        flattened.append(subrow)
+                    else:
+                        flattened.append([subrow])
+            else:
+                flattened.append(row)
+        else:
+            flattened.append([row])
+    return flattened
             
 
 
