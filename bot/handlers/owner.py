@@ -43,7 +43,9 @@ async def add_stylist(event, bot):
         await conv.send_message(" شماره موبایل آرایشگر را وارد کنید:")
         mobile = (await conv.get_response()).text.strip()
 
-        mongo.mongo_manager.add_user(telegram_id, name, mobile)
+        add = mongo.mongo_manager.add_user(telegram_id, name, mobile)
+        if add == False:
+            await conv.send_message("آرایشگر با این اسم در سیستم وجود دارد.")
         await conv.send_message(f"✅ آرایشگر {name} با شماره {mobile} اضافه شد.")
 
 async def add_product(event, bot):

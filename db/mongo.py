@@ -23,6 +23,9 @@ class MongoManager:
 
     #  کاربران
     def add_user(self,id ,name, mobile, role="stylist"):
+        user = self.users.find_one({"name" : name})
+        if user:
+            return False
         user = {
             "id" : id,
             "name": name,
