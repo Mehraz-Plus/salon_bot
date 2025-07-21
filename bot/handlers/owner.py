@@ -29,6 +29,8 @@ async def handle_callback(event, data, bot):
         await update_product_price(event, bot)
     elif data == "withdraw":
         await withdraw(event, bot)
+    elif data == "see_invoice":
+        await see_invoice(event)
     
     await event.answer()
 
@@ -316,6 +318,21 @@ def flatten_buttons(buttons):
         else:
             flattened.append([row])
     return flattened
-            
+
+def gregorian_to_jalali(gregorian_date):
+    return jdatetime.date.fromgregorian(date=gregorian_date)
+
+async def see_invoice(event):
+    invoices = mongo.mongo_manager.see_invoice()
+    text = "فاکتور ها : \n"
+    for invoice in invoices:
+        stylist = invoice["id"]
+        customer = invoice["customer_name"]
+        price = invoice["total"]
+        time = invoice["date"]
+        jalali_date = gregorian_to_jalali(time)
+        text += f"نام آرایشگر : {stylist} \n نام مشتری : {customer} \n مبلغ پرداختی : {price} \n تاریخ : {jalali_date}"
+    await event.respond(text)
+
 
 

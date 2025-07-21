@@ -329,7 +329,8 @@ class MongoManager:
 
         return f"✅ قیمت محصول «{product['name']}» به {new_price} به‌روزرسانی شد."
 
-        
+    def see_invoice(self):
+        return self.invoices.find()
 
 
 mongo_manager = MongoManager()

@@ -49,6 +49,7 @@ async def main_handler(event):
                 [Button.inline("حذف محصول", b"delete_product")],
                 [Button.inline("تغیر قیمت محصول", b"update_product_price")],
                 [Button.inline("تسویه حساب با آرایشگر", b"withdraw")],
+                [Button.inline("دیدن فاکتورها", b"see_invoice")],
             ]
         await event.reply("سلام مدیر ! لطفاً یکی از گزینه‌ها را انتخاب کنید:", buttons=buttons)
         
